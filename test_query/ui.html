@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Guardium RAG — Query UI</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    background: #f0f2f5;
+    color: #1f2328;
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  header {
+    background: #1c3557;
+    color: #fff;
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  header svg { flex-shrink: 0; }
+  header h1  { font-size: 17px; font-weight: 600; letter-spacing: .3px; }
+  header p   { font-size: 12px; opacity: .72; }
+
+  /* ── Layout ── */
+  main {
+    max-width: 860px;
+    margin: 36px auto;
+    padding: 0 20px 60px;
+  }
+
+  /* ── Ask card ── */
+  .ask-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 24px 28px;
+  }
+  .ask-card label {
+    display: block;
+    font-weight: 600;
+    font-size: 13px;
+    color: #57606a;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    margin-bottom: 10px;
+  }
+  .input-row {
+    display: flex;
+    gap: 10px;
+  }
+  #question {
+    flex: 1;
+    padding: 11px 14px;
+    font-size: 15px;
+    border: 1.5px solid #d0d7de;
+    border-radius: 7px;
+    outline: none;
+    transition: border-color .15s;
+    color: #1f2328;
+  }
+  #question:focus { border-color: #3b82d4; }
+  #question::placeholder { color: #9ca3af; }
+
+  #askBtn {
+    padding: 11px 22px;
+    background: #3b82d4;
+    color: #fff;
+    border: none;
+    border-radius: 7px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .15s;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  #askBtn:hover:not(:disabled) { background: #2563b8; }
+  #askBtn:disabled { background: #93b9e8; cursor: not-allowed; }
+
+  /* spinner */
+  .spin {
+    width: 15px; height: 15px;
+    border: 2.5px solid rgba(255,255,255,.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    display: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #askBtn.loading .spin { display: block; }
+  #askBtn.loading .btn-label { display: none; }
+
+  /* ── Status / error banner ── */
+  #status {
+    margin-top: 14px;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    display: none;
+  }
+  #status.error   { background: #fef2f2; border: 1px solid #fca5a5; color: #b91c1c; }
+  #status.info    { background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; }
+
+  /* ── Result area ── */
+  #result { margin-top: 28px; }
+
+  /* ── Section cards ── */
+  .section {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .section-head {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 13px 20px;
+    background: #f7f8fa;
+    border-bottom: 1px solid #e5e7eb;
+    font-weight: 600;
+    font-size: 13px;
+    color: #374151;
+  }
+  .section-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .dot-blue   { background: #3b82d4; }
+  .dot-green  { background: #16a34a; }
+  .dot-violet { background: #7c5cd8; }
+  .dot-amber  { background: #d97706; }
+  .dot-gray   { background: #6b7280; }
+  .dot-teal   { background: #0d9488; }
+
+  .section-body { padding: 16px 20px; }
+
+  /* meta row (intent / rewritten) */
+  .meta-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 4px 14px;
+    font-size: 13px;
+  }
+  .meta-grid .k { color: #57606a; font-weight: 500; white-space: nowrap; }
+  .meta-grid .v { color: #1f2328; }
+
+  /* intent badge */
+  .badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+  }
+  .badge-info   { background: #dbeafe; color: #1d4ed8; }
+  .badge-action { background: #fef9c3; color: #92400e; }
+
+  /* facet pills */
+  .pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .pill {
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid;
+  }
+  .pill-kw { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+  .pill-pe { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+  .pill-fe { background: #faf5ff; border-color: #e9d5ff; color: #6b21a8; }
+
+  /* answer text */
+  .answer-body {
+    font-size: 14.5px;
+    line-height: 1.75;
+    color: #1f2328;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  /* plan steps */
+  .plan-step {
+    display: flex;
+    gap: 14px;
+    padding: 11px 0;
+    border-bottom: 1px solid #f3f4f6;
+  }
+  .plan-step:last-child { border-bottom: none; }
+  .step-num {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: #3b82d4;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .step-action { font-weight: 600; font-size: 13.5px; color: #1f2328; }
+  .step-detail { font-size: 13px; color: #57606a; margin-top: 3px; }
+
+  /* workflow list */
+  .wf-item {
+    padding: 10px 0;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: 13px;
+  }
+  .wf-item:last-child { border-bottom: none; }
+  .wf-name { font-weight: 600; }
+  .wf-score { color: #57606a; font-size: 12px; margin-left: 8px; }
+  .wf-steps { color: #6b7280; margin-top: 4px; padding-left: 14px; font-size: 12.5px; }
+  .wf-steps li { margin-bottom: 2px; }
+
+  /* chunks */
+  .chunk-item {
+    padding: 10px 0;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: 13px;
+  }
+  .chunk-item:last-child { border-bottom: none; }
+  .chunk-meta { color: #57606a; font-size: 12px; margin-bottom: 3px; }
+  .chunk-content { color: #374151; line-height: 1.55; }
+
+  /* trace list */
+  .trace-list { list-style: none; }
+  .trace-list li {
+    padding: 5px 0;
+    border-bottom: 1px solid #f7f8fa;
+    font-size: 12.5px;
+    color: #57606a;
+    display: flex;
+    gap: 10px;
+  }
+  .trace-list li:last-child { border-bottom: none; }
+  .trace-idx {
+    width: 22px; height: 22px;
+    border-radius: 4px;
+    background: #f3f4f6;
+    color: #6b7280;
+    font-size: 11px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* empty state */
+  .empty { color: #9ca3af; font-style: italic; font-size: 13px; }
+
+  /* facet detail table */
+  .fd-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .fd-table th {
+    text-align: left; padding: 6px 10px;
+    background: #f7f8fa;
+    color: #57606a;
+    font-weight: 600;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .fd-table td {
+    padding: 7px 10px;
+    border-bottom: 1px solid #f3f4f6;
+    vertical-align: top;
+  }
+  .fd-table tr:last-child td { border-bottom: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+    <rect width="32" height="32" rx="6" fill="#ffffff22"/>
+    <path d="M16 5L27 11V21L16 27L5 21V11L16 5Z" stroke="#fff" stroke-width="1.8" fill="none"/>
+    <circle cx="16" cy="16" r="4" fill="#fff" opacity=".9"/>
+  </svg>
+  <div>
+    <h1>IBM Guardium RAG — Knowledge Query</h1>
+    <p>Agentic retrieval · rewrite → facets → intent → answer / plan</p>
+  </div>
+</header>
+
+<main>
+
+  <!-- Ask box -->
+  <div class="ask-card">
+    <label for="question">Ask a question</label>
+    <div class="input-row">
+      <input
+        id="question"
+        type="text"
+        placeholder="e.g. which databases are supported by GDP?"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button id="askBtn">
+        <span class="btn-label">Ask</span>
+        <div class="spin"></div>
+      </button>
+    </div>
+    <div id="status"></div>
+  </div>
+
+  <!-- Result panels (hidden until a response arrives) -->
+  <div id="result"></div>
+
+</main>
+
+<script>
+// API endpoint resolution:
+//   • Served by FastAPI at :8088/ui  → relative path (same origin)
+//   • Served by serve.py  at :8089   → absolute http://localhost:8088
+//   • Opened as file://              → absolute http://localhost:8088
+const _sameOrigin = (location.protocol !== "file:" && location.port === "8088");
+const API_URL = _sameOrigin
+  ? "/api/v1/query/agentic"
+  : "http://localhost:8088/api/v1/query/agentic";
+
+const DEFAULT_PARAMS = {
+  use_llm: true,
+  top_k: 10,
+  score_threshold: 0,
+  facet_top_k: 3,
+  traversal: "both",
+  dfs_max_nodes: 20,
+  bfs_hops: 2,
+  max_traversal_nodes: 40,
+  workflow_top_k: 3,
+  facet_boost: 0.15,
+  force_intent: null
+};
+
+/* ── helpers ── */
+function esc(s) {
+  return String(s ?? "")
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+function pills(items, cls) {
+  if (!items || !items.length) return '<span class="empty">none</span>';
+  return items.map(t => `<span class="pill ${cls}">${esc(t)}</span>`).join("");
+}
+
+/* ── render ── */
+function render(data) {
+  const facets  = data.facets  || {};
+  const answer  = (data.answer || "").trim();
+  const plan    = data.plan    || [];
+  const matched = data.matched_workflows || [];
+  const chunks  = data.supporting_chunks || [];
+  const trace   = data.trace  || [];
+  const fdetail = data.facet_details || [];
+
+  const intentBadge = data.intent === "action"
+    ? '<span class="badge badge-action">Action</span>'
+    : '<span class="badge badge-info">Informational</span>';
+  const conf = data.intent_confidence != null
+    ? ` <small style="color:#9ca3af">(${Math.round(data.intent_confidence*100)}%)</small>` : "";
+
+  let html = "";
+
+  /* ── Overview ── */
+  html += `
+  <div class="section">
+    <div class="section-head"><span class="section-dot dot-blue"></span>Overview</div>
+    <div class="section-body">
+      <div class="meta-grid">
+        <span class="k">Question</span>   <span class="v">${esc(data.query)}</span>
+        <span class="k">Rewritten</span>  <span class="v">${esc(data.rewritten_query || data.query)}</span>
+        <span class="k">Intent</span>     <span class="v">${intentBadge}${conf}</span>
+      </div>
+    </div>
+  </div>`;
+
+  /* ── Facets ── */
+  html += `
+  <div class="section">
+    <div class="section-head"><span class="section-dot dot-violet"></span>Extracted Facets</div>
+    <div class="section-body">
+      <div style="display:grid;gap:10px">
+        <div>
+          <div style="font-size:11px;font-weight:600;color:#57606a;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Keywords</div>
+          <div class="pills">${pills(facets.keywords,"pill-kw")}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:#57606a;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Personas</div>
+          <div class="pills">${pills(facets.personas,"pill-pe")}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:#57606a;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Features</div>
+          <div class="pills">${pills(facets.features,"pill-fe")}</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  /* ── Answer (always shown) ── */
+  {
+    let displayAnswer = answer;
+    if (!displayAnswer) {
+      // action intent or LLM off — build extractive fallback from supporting chunks
+      const fallbackParts = chunks.slice(0, 5)
+        .map(c => (c.content || "").trim())
+        .filter(Boolean);
+      displayAnswer = fallbackParts.length
+        ? fallbackParts.join("\n\n")
+        : "No answer text was returned. See the supporting chunks and pipeline trace below for details.";
+    }
+    const answerLabel = answer
+      ? "Answer"
+      : data.intent === "action"
+        ? "Answer — extracted from workflow context"
+        : "Answer — extracted from supporting chunks";
+    html += `
+  <div class="section">
+    <div class="section-head"><span class="section-dot dot-green"></span>${answerLabel}</div>
+    <div class="section-body">
+      <div class="answer-body">${esc(displayAnswer)}</div>
+    </div>
+  </div>`;
+  }
+
+  /* ── Plan ── */
+  if (plan.length) {
+    const wfName = data.selected_workflow ? esc(data.selected_workflow.name) : "Workflow";
+    const steps  = [...plan].sort((a,b)=>(a.order||0)-(b.order||0))
+      .map(s => `
+        <div class="plan-step">
+          <div class="step-num">${s.order}</div>
+          <div>
+            <div class="step-action">${esc(s.action)}</div>
+            ${s.detail && s.detail !== s.action
+              ? `<div class="step-detail">${esc(s.detail)}</div>` : ""}
+          </div>
+        </div>`).join("");
+    html += `
+  <div class="section">
+    <div class="section-head"><span class="section-dot dot-amber"></span>Execution Plan — ${wfName}</div>
+    <div class="section-body">${steps}</div>
+  </div>`;
+  }
+
+  /* ── Matched Workflows ── */
+  if (matched.length) {
+    const wfHtml = matched.map(wf => {
+      const stepsHtml = (wf.steps||[]).slice(0,5)
+        .map(s=>`<li>${esc(s.slice(0,120))}</li>`).join("");
+      const more = wf.steps && wf.steps.length > 5
+        ? `<li style="color:#9ca3af">… ${wf.steps.length-5} more</li>` : "";
+      return `
+      <div class="wf-item">
+        <span class="wf-name">${esc(wf.name)}</span>
+        <span class="wf-score">score ${(wf.score||0).toFixed(4)}</span>
+        ${stepsHtml ? `<ul class="wf-steps">${stepsHtml}${more}</ul>` : ""}
+      </div>`;
+    }).join("");
+    html += `
+  <div class="section">
+    <div class="section-head"><span class="section-dot dot-amber"></span>Matched Workflows (${matched.length})</div>
+    <div class="section-body">${wfHtml}</div>
+  </div>`;
+  }
+
+  /* ── Supporting Chunks ── */
+  if (chunks.length) {
+    const top5 = chunks.slice(0,5).map(c => {
+      const content = (c.content||"").trim().slice(0,220);
+      return `
+      <div class="chunk-item">
+        <div class="chunk-meta">[${esc(c.chunk_type||"?")}]  score ${(c.score||0).toFixed(4)}</div>
+        <div class="chunk-content">${esc(content)}${(c.content||"").length>220?"…":""}</div>
+      </div>`;
+    }).join("");
+    const more = chunks.length > 5
+      ? `<div style="font-size:12px;color:#9ca3af;padding-top:8px">… ${chunks.length-5} more chunks</div>` : "";
+    html += `
+  <div class="section">
+    <div class="section-head"><span class="section-dot dot-teal"></span>Supporting Chunks (${chunks.length})</div>
+    <div class="section-body">${top5}${more}</div>
+  </div>`;
+  }
+
+  /* ── Facet Details ── */
+  if (fdetail.length) {
+    const rows = fdetail.map(fd => `
+      <tr>
+        <td style="font-weight:600">${esc(fd.facet_type)}</td>
+        <td>${fd.chunks ? fd.chunks.length : 0}</td>
+        <td>${(fd.values||[]).join(", ") || '<span class="empty">—</span>'}</td>
+      </tr>`).join("");
+    html += `
+  <div class="section">
+    <div class="section-head"><span class="section-dot dot-violet"></span>Facet Detail Chunks</div>
+    <div class="section-body">
+      <table class="fd-table">
+        <thead><tr><th>Type</th><th>Chunks</th><th>Values</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  </div>`;
+  }
+
+  /* ── Trace ── */
+  if (trace.length) {
+    const items = trace.map((t,i)=>`
+      <li><span class="trace-idx">${i+1}</span><span>${esc(t)}</span></li>`).join("");
+    html += `
+  <div class="section">
+    <div class="section-head"><span class="section-dot dot-gray"></span>Pipeline Trace</div>
+    <div class="section-body"><ul class="trace-list">${items}</ul></div>
+  </div>`;
+  }
+
+  document.getElementById("result").innerHTML = html;
+}
+
+/* ── submit ── */
+async function submit() {
+  const q = document.getElementById("question").value.trim();
+  if (!q) return;
+
+  const btn    = document.getElementById("askBtn");
+  const status = document.getElementById("status");
+
+  btn.disabled = true;
+  btn.classList.add("loading");
+  status.style.display = "none";
+  document.getElementById("result").innerHTML = "";
+
+  const payload = { ...DEFAULT_PARAMS, query: q };
+
+  try {
+    const res = await fetch(API_URL, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body:    JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error(`HTTP ${res.status} — ${txt.slice(0,200)}`);
+    }
+    const data = await res.json();
+    render(data);
+  } catch (err) {
+    status.className     = "error";
+    status.style.display = "block";
+    status.textContent   = "Error: " + err.message;
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove("loading");
+  }
+}
+
+/* ── wire up events ── */
+document.getElementById("askBtn").addEventListener("click", submit);
+document.getElementById("question").addEventListener("keydown", e => {
+  if (e.key === "Enter") submit();
+});
+</script>
+</body>
+</html>
