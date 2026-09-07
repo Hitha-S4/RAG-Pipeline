@@ -24,10 +24,10 @@ def _read_product_name(fallback: str = "the product") -> str:
     """Return the product name from the first heading line of any summary MD file.
 
     The summary files carry a title line of the form:
-        # IBM Guardium Data Protection (GDP) — KNOWLEDGE
+        # Your Product Name — KNOWLEDGE
     This function strips the ``# `` prefix and the `` — <CATEGORY>`` suffix so
-    that only the bare product name (e.g. "IBM Guardium Data Protection (GDP)")
-    is returned.  Falls back to *fallback* when no summary file can be read.
+    that only the bare product name is returned. Falls back to *fallback* when
+    no summary file can be read.
     """
     _SUMMARY_CANDIDATES = [
         "uploads/summary/KNOWLEDGE.md",

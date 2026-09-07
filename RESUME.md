@@ -9,7 +9,7 @@
 
 > Use this in the **Projects** section header or as a tagline under the project title.
 
-**GenAI RAG Pipeline** — Production-oriented Retrieval-Augmented Generation backend with agentic query planning, dual-vector retrieval, and LLM-powered document intelligence; built on FastAPI, Milvus, and IBM Watsonx.
+**GenAI RAG Pipeline** — Production-oriented Retrieval-Augmented Generation backend with agentic query planning, dual-vector retrieval, and LLM-powered document intelligence; built on FastAPI, Milvus, and a modern LLM provider.
 
 ---
 
@@ -17,7 +17,7 @@
 
 > Use anywhere space is at a premium — a LinkedIn experience entry, a line in a summary, or a recruiter-screen version.
 
-Engineered a production RAG pipeline on FastAPI, Milvus, and IBM Watsonx — covering a 9-stage ingestion flow (LLM entity extraction, hierarchical chunking, dual-vector embedding) through to an agentic retrieval engine that rewrites queries, fuses multi-variant results via Reciprocal Rank Fusion, detects user intent, and delivers synthesised answers or step-by-step execution plans accordingly.
+Engineered a production RAG pipeline on FastAPI, Milvus, and a modern LLM provider — covering a 9-stage ingestion flow (LLM entity extraction, hierarchical chunking, dual-vector embedding) through to an agentic retrieval engine that rewrites queries, fuses multi-variant results via Reciprocal Rank Fusion, detects user intent, and delivers synthesised answers or step-by-step execution plans accordingly.
 
 ---
 

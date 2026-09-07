@@ -3,7 +3,7 @@ LLM service — fast, token-efficient notes for MD generation.
 
 PROVIDER
 ────────
-  IBM AIM /inference/chat/completions via curl subprocess.
+  LLM chat-completions via curl subprocess.
   No Python HTTP client, no WAF fingerprinting issues.
 
 CONCURRENCY & BATCHING

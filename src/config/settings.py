@@ -84,9 +84,9 @@ class Settings(BaseSettings):
     app_env:   Literal["development", "staging", "production"]
     log_level: str
 
-    # Name of the product the ingested documentation describes.  Prompts are
+    # Name of the product the ingested documentation describes. Prompts are
     # data-source independent; this is the ONLY place a product is named.
-    # Set PRODUCT_NAME in .env (e.g. "IBM Guardium Data Protection (GDP)").
+    # Set PRODUCT_NAME in .env (e.g. "Your Product Name").
     product_name: str = "the product"
 
     # ── Milvus ────────────────────────────────────────────────────────────────
@@ -114,7 +114,7 @@ class Settings(BaseSettings):
     embedding_batch_size: int   = 64
     embedding_delay:      float = 0.0       # only used for aim provider
 
-    # ── Provider (IBM AIM) ────────────────────────────────────────────────────
+    # ── Provider (LLM API) ─────────────────────────────────────────────────────
     llm_base_url: str
     llm_api_key:  str = Field(repr=False)
 

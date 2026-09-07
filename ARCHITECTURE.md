@@ -1,8 +1,8 @@
 # genai-rag-pipeline — Architecture & Developer Reference
 
-> **Version:** 1.1.0 · **Stack:** Python 3.11+, FastAPI, Milvus, IBM AIM (Watsonx granite), sentence-transformers
+> **Version:** 1.1.0 · **Stack:** Python 3.11+, FastAPI, Milvus, an LLM provider, sentence-transformers
 >
-> A production-oriented RAG (**Retrieval-Augmented Generation**) ingestion and retrieval backend built for IBM Guardium Data Protection documentation. The service ingests multi-format documents, classifies and embeds every chunk, persists them in a vector store, and exposes two query modes: a simple ANN search and a full agentic retrieval flow.
+> A production-oriented RAG (**Retrieval-Augmented Generation**) ingestion and retrieval backend for technical documentation. The service ingests multi-format documents, classifies and embeds every chunk, persists them in a vector store, and exposes two query modes: a simple ANN search and a full agentic retrieval flow.
 
 ---
 

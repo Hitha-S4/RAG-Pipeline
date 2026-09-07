@@ -5,10 +5,10 @@ Providers
 ─────────
     local  → sentence-transformers running on-device (MPS/CPU) — no network calls,
              no WAF, no rate limits. Default and recommended.
-    aim    → IBM AIM /inference/embeddings via curl subprocess — fallback for
+    remote → LLM provider embeddings endpoint via curl subprocess — fallback for
              when the local model is unavailable.
 
-EMBEDDING_PROVIDER=local is set by default. Switch to aim in .env if needed.
+EMBEDDING_PROVIDER=local is set by default. Switch to remote in .env if needed.
 """
 from __future__ import annotations
 
@@ -59,10 +59,10 @@ class _LocalProvider:
         return [v.tolist() for v in vectors]
 
 
-# ── AIM (curl) provider ───────────────────────────────────────────────────────
+# ── Remote (curl) provider ─────────────────────────────────────────────────────
 
-class _AIMProvider:
-    """Calls the IBM AIM embeddings endpoint via curl. Fallback when local
+class _RemoteProvider:
+    """Calls the configured remote embeddings endpoint via curl. Fallback when local
     model is unavailable."""
 
     _TOKEN_LIMIT = 500
